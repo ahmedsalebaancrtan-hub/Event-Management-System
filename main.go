@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/ahmedsaleban/eventManagementsystem/Routes"
 	"github.com/ahmedsaleban/eventManagementsystem/infra"
 	"github.com/gin-gonic/gin"
 )
@@ -17,6 +18,7 @@ func main() {
 	slog.Info("Connect database succesfully")
 
 	r := gin.Default()
+	Routes.RegisterRoute(r)
 
 	slog.Info("application is running successfully on port 5000")
 	r.Run(fmt.Sprintf(":%s", config.Port))
