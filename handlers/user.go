@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/ahmedsaleban/eventManagementsystem/dtos"
 	"github.com/ahmedsaleban/eventManagementsystem/infra"
@@ -76,4 +77,55 @@ func (h *UserHandler) LoginUser(c *gin.Context) {
 		"message": "Login successful",
 		"data":    response,
 	})
+}
+func (h *UserHandler) GetAllUsers(c *gin.Context) {
+	status, data, err := h.Usersvc.GetAllUsers()
+
+	if err != nil {
+		c.JSON(status, gin.H{
+			"is_success": false,
+			"messege":    err.Error(),
+		})
+		return
+	}
+
+	c.JSON(status, gin.H{
+		"is_sucess": true,
+		"messege":   "Users fecthed sucessfully!",
+		"data":      data,
+	})
+
+}
+
+func (h *UserHandler) GetUserById(c *gin.Context) {
+	IdStr := c.Param("userId")
+
+	id, err := strconv.Atoi(IdStr)
+
+	if err != nil {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"messege":    "failed to get  user param",
+			"is_success": false,
+			"error":      err.Error(),
+		})
+		return
+	}
+
+	status, user, err := h.Usersvc.GetUserById(uint(id))
+
+	if err != nil {
+		c.JSON(status, gin.H{
+			"is_success": false,
+			"messege":    err.Error(),
+		})
+		return
+	}
+
+	c.JSON(status, gin.H{
+		"is_sucess": true,
+		"messege":   "users fecthed sucessfully!",
+		"data":      user,
+	})
+
 }
