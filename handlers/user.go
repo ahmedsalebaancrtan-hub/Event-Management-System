@@ -51,3 +51,29 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	})
 
 }
+
+func (h *UserHandler) LoginUser(c *gin.Context) {
+	var req dtos.CreateLogindto
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Invalid request body",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	response, statusCode, err := h.Usersvc.LoginUser(&req)
+	if err != nil {
+		c.JSON(statusCode, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+
+	// Success response
+	c.JSON(statusCode, gin.H{
+		"message": "Login successful",
+		"data":    response,
+	})
+}

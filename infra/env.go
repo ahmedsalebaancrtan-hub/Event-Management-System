@@ -8,12 +8,14 @@ import (
 )
 
 type AppCofig struct {
-	Port       string
-	DbUser     string
-	DbPassword string
-	DbName     string
-	DbPort     string
-	DbHost     string
+	Port              string
+	DbUser            string
+	DbPassword        string
+	DbName            string
+	DbPort            string
+	DbHost            string
+	Access_jwt_Token  string
+	Refresh_jwt_token string
 }
 
 var Configuration AppCofig
@@ -31,4 +33,6 @@ func InitEnv() {
 	Configuration.DbName = os.Getenv("DB_NAME")
 	Configuration.DbPort = os.Getenv("DB_PORT")
 	Configuration.DbHost = os.Getenv("DB_HOST")
+	Configuration.Access_jwt_Token = os.Getenv("Access_jwt_Token")
+	Configuration.Refresh_jwt_token = os.Getenv("Refresh_jwt_Token")
 }

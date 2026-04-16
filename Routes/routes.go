@@ -12,5 +12,6 @@ func RegisterRoute(r *gin.Engine) {
 	UserGroup := ApiGroup.Group("/users")
 	{
 		UserGroup.POST("/create", UserHandler.CreateUser)
+		UserGroup.POST("/login", UserHandler.LoginUser)
 	}
 }
