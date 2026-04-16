@@ -28,3 +28,25 @@ func (r *UserRepo) GetUserByEmail(email string) (models.User, error) {
 	}
 	return user, nil
 }
+func (r *UserRepo) GetAllusers() ([]models.User, error) {
+	var User []models.User
+
+	err := r.DB.Find(&User).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return User, nil
+
+}
+
+func (r *UserRepo) GetUserbyId(id uint) (models.User, error) {
+	var user models.User
+
+	err := r.DB.Where("id = ?", id).First(&user).Error
+
+	if err != nil {
+		return models.User{}, err
+	}
+	return user, nil
+}

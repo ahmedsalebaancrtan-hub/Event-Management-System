@@ -3,9 +3,10 @@ package dtos
 import "github.com/ahmedsaleban/eventManagementsystem/models"
 
 type CreateUserdto struct {
-	Name     string `json:"name" binding:"required"`
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=8,max=128"`
+	Name     string      `json:"name" binding:"required"`
+	Email    string      `json:"email" binding:"required,email"`
+	Password string      `json:"password" binding:"required,min=8,max=128"`
+	Role     models.Role `json:"role" binding:"required,oneof=ADMIN ORGANIZER STAFF"`
 }
 
 type CreateLogindto struct {

@@ -19,11 +19,15 @@ type UserService struct {
 	Repo *repository.UserRepo
 }
 
+//REGISTER FUNCTION SERVICE
+
 func Registersvc(Repo *repository.UserRepo) *UserService {
 	return &UserService{
 		Repo: Repo,
 	}
 }
+
+//CREATE USER SERVICE
 
 func (svc *UserService) CreateUser(data *dtos.CreateUserdto) (int, error) {
 	email := strings.ToLower(data.Email)
@@ -47,6 +51,7 @@ func (svc *UserService) CreateUser(data *dtos.CreateUserdto) (int, error) {
 		Name:     data.Name,
 		Email:    data.Email,
 		Password: data.Password,
+		Role:     data.Role,
 	})
 	if err != nil {
 		slog.Error("failed created User")
@@ -54,6 +59,33 @@ func (svc *UserService) CreateUser(data *dtos.CreateUserdto) (int, error) {
 	}
 	return http.StatusCreated, nil
 }
+
+// GET ALL USERS  API
+func (svc *UserService) GetAllUsers() (int, []models.User, error) {
+
+	data, err := svc.Repo.GetAllusers()
+
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	return http.StatusOK, data, nil
+}
+
+// GET USER BY ID API
+
+func (svc *UserService) GetUserById(id uint) (int, models.User, error) {
+
+	data, err := svc.Repo.GetUserbyId(id)
+
+	if err != nil {
+		return http.StatusInternalServerError, models.User{}, err
+	}
+
+	return http.StatusOK, data, nil
+}
+
+// LOGIN USER API
 
 func (svc *UserService) LoginUser(data *dtos.CreateLogindto) (response dtos.LoginUserResponse, statusCode int, err error) {
 	slog.Info("Login user")
