@@ -16,5 +16,6 @@ func RegisterRoute(r *gin.Engine) {
 		UserGroup.POST("/login", UserHandler.LoginUser)
 		UserGroup.GET("/user/:userId", middleware.Authenticated(), middleware.RequiredRole("ORGANIZER"), UserHandler.GetUserById)
 		UserGroup.GET("/allusers", middleware.Authenticated(), middleware.RequiredRole("ADMIN", "STAFF", "ORGANIZER"), UserHandler.GetAllUsers)
+		UserGroup.GET("/whoami", middleware.Authenticated(), middleware.RequiredRole("ADMIN", "ORGANIZER", "STAFF"), UserHandler.WhoAmI)
 	}
 }

@@ -78,6 +78,7 @@ func (h *UserHandler) LoginUser(c *gin.Context) {
 		"data":    response,
 	})
 }
+
 func (h *UserHandler) GetAllUsers(c *gin.Context) {
 	status, data, err := h.Usersvc.GetAllUsers()
 
@@ -128,4 +129,20 @@ func (h *UserHandler) GetUserById(c *gin.Context) {
 		"data":      user,
 	})
 
+}
+
+func (h *UserHandler) WhoAmI(c *gin.Context) {
+	email, exists := c.Get("email")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	user, status, err := h.Usersvc.WhoAmI(email.(string))
+	if err != nil {
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(status, gin.H{"user": user})
 }
