@@ -85,6 +85,23 @@ func (svc *UserService) GetUserById(id uint) (int, models.User, error) {
 	return http.StatusOK, data, nil
 }
 
+func (svc *UserService) WhoAmI(email string) (*models.User, int, error) {
+
+	slog.Info("Fetching user info from WhoAmI")
+
+	email = strings.ToLower(email)
+
+	user, err := svc.Repo.GetUserByEmail(email)
+	if err != nil {
+		slog.Error("User not found")
+		return nil, http.StatusNotFound, errors.New("user not found")
+	}
+
+	slog.Info("User fetched successfully")
+
+	return &user, http.StatusOK, nil
+}
+
 // LOGIN USER API
 
 func (svc *UserService) LoginUser(data *dtos.CreateLogindto) (response dtos.LoginUserResponse, statusCode int, err error) {
