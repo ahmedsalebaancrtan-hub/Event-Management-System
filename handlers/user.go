@@ -204,3 +204,29 @@ func (h *UserHandler) ResetPassword(c *gin.Context) {
 		"message": "password reset successfully",
 	})
 }
+
+func (h *UserHandler) ResetPasswordByAdmin(c *gin.Context) {
+	var body dtos.ResetPasswordDTO
+
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "invalid request",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	adminEmail := c.GetString("email")
+
+	status, err := h.Usersvc.ResetPasswordByAdmin(adminEmail, &body)
+	if err != nil {
+		c.JSON(status, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(status, gin.H{
+		"message": "password reset successfully",
+	})
+}

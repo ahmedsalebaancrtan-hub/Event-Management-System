@@ -20,7 +20,11 @@ type LoginUserResponse struct {
 	User         models.User `json:"user"`
 }
 
-// Standardized to ResetPasswordDTO
+type ResetPasswordByAdminDTO struct {
+	UserID      int    `json:"user_id" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,min=6"`
+}
+
 type ResetPasswordDTO struct {
 	UserID      uint   `json:"user_id" binding:"required"`
 	NewPassword string `json:"newpassword" binding:"required"`

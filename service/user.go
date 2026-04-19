@@ -127,7 +127,7 @@ func (svc *UserService) ForgotPassword(data *dtos.ForgotPasswordDTO) (int, error
 	email := strings.ToLower(data.Email)
 	_, err := svc.Repo.GetUserByEmail(email)
 	if err != nil {
-		return http.StatusOK, nil // Silent return for security
+		return http.StatusOK, nil
 	}
 
 	token := helpers.GenerateSecureToken()
@@ -165,5 +165,34 @@ func (svc *UserService) ResetPasswords(data *dtos.ResetPasswordDTO) (int, error)
 	}
 
 	_ = svc.Repo.DeleteResetToken(data.Token)
+	return http.StatusOK, nil
+}
+func (svc *UserService) ResetPasswordByAdmin(adminEmail string, data *dtos.ResetPasswordDTO) (int, error) {
+
+	slog.Info("Admin resetting user password", "admin", adminEmail, "user_id", data.UserID)
+
+	// 1. Check user exists
+	_, err := svc.Repo.GetUserbyId(data.UserID)
+	if err != nil {
+		slog.Error("user not found")
+		return http.StatusNotFound, errors.New("user not found")
+	}
+
+	// 2. Hash password
+	hash, err := bcrypt.GenerateFromPassword([]byte(data.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		slog.Error("failed to hash password")
+		return http.StatusInternalServerError, errors.New("failed to process password")
+	}
+
+	// 3. Update password
+	err = svc.Repo.UpdatePasswordById(data.UserID, string(hash))
+	if err != nil {
+		slog.Error("failed to update password")
+		return http.StatusInternalServerError, errors.New("failed to update password")
+	}
+
+	slog.Info("password reset successful", "user_id", data.UserID)
+
 	return http.StatusOK, nil
 }

@@ -20,5 +20,6 @@ func RegisterRoute(r *gin.Engine) {
 		UserGroup.POST("/Refresh_token", middleware.RefreshAuthenticated(), UserHandler.RefreshToken)
 		UserGroup.POST("/forgetpassword", UserHandler.ForgotPassword)
 		UserGroup.POST("reset", UserHandler.ResetPassword)
+		UserGroup.POST("/reset-password", middleware.Authenticated(), middleware.RequiredRole("ADMIN"), UserHandler.ResetPasswordByAdmin)
 	}
 }
