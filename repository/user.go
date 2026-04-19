@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"errors"
+
 	"github.com/ahmedsaleban/eventManagementsystem/models"
 	"gorm.io/gorm"
 )
@@ -10,9 +12,7 @@ type UserRepo struct {
 }
 
 func RegisterRepo(db *gorm.DB) *UserRepo {
-	return &UserRepo{
-		DB: db,
-	}
+	return &UserRepo{DB: db}
 }
 
 func (r *UserRepo) CreateUser(data models.User) error {
@@ -21,32 +21,43 @@ func (r *UserRepo) CreateUser(data models.User) error {
 
 func (r *UserRepo) GetUserByEmail(email string) (models.User, error) {
 	var user models.User
-
 	err := r.DB.Where("email = ?", email).First(&user).Error
-	if err != nil {
-		return models.User{}, err
-	}
-	return user, nil
+	return user, err
 }
+
 func (r *UserRepo) GetAllusers() ([]models.User, error) {
-	var User []models.User
-
-	err := r.DB.Find(&User).Error
-
-	if err != nil {
-		return nil, err
-	}
-	return User, nil
-
+	var users []models.User
+	err := r.DB.Find(&users).Error
+	return users, err
 }
 
 func (r *UserRepo) GetUserbyId(id uint) (models.User, error) {
 	var user models.User
+	err := r.DB.First(&user, id).Error
+	return user, err
+}
 
-	err := r.DB.Where("id = ?", id).First(&user).Error
-
-	if err != nil {
-		return models.User{}, err
+func (r *UserRepo) UpdatePasswordById(id uint, hashedpassword string) error {
+	result := r.DB.Model(&models.User{}).Where("id = ?", id).Update("password", hashedpassword)
+	if result.Error != nil {
+		return result.Error
 	}
-	return user, nil
+	if result.RowsAffected == 0 {
+		return errors.New("user not found")
+	}
+	return nil
+}
+
+func (r *UserRepo) SaveResetToken(data models.PasswordResetToken) error {
+	return r.DB.Create(&data).Error
+}
+
+func (r *UserRepo) GetResetToken(token string) (models.PasswordResetToken, error) {
+	var record models.PasswordResetToken
+	err := r.DB.Where("token = ?", token).First(&record).Error
+	return record, err
+}
+
+func (r *UserRepo) DeleteResetToken(token string) error {
+	return r.DB.Where("token = ?", token).Delete(&models.PasswordResetToken{}).Error
 }

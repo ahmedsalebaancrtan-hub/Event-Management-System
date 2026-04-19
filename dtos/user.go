@@ -15,7 +15,18 @@ type CreateLogindto struct {
 }
 
 type LoginUserResponse struct {
-	AccessToken  string      `json:"Access_token"`
-	RefreshToken string      `json:"Refresh_token"`
+	AccessToken  string      `json:"access_token"`
+	RefreshToken string      `json:"refresh_token"`
 	User         models.User `json:"user"`
+}
+
+// Standardized to ResetPasswordDTO
+type ResetPasswordDTO struct {
+	UserID      uint   `json:"user_id" binding:"required"`
+	NewPassword string `json:"newpassword" binding:"required"`
+	Token       string `json:"token"`
+}
+
+type ForgotPasswordDTO struct {
+	Email string `json:"email" binding:"required,email"`
 }

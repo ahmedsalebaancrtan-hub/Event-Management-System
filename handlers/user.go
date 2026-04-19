@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -17,7 +18,7 @@ type UserHandler struct {
 
 func RegisterUserHandler() *UserHandler {
 	userRepo := repository.RegisterRepo(infra.DB)
-	usersvc := service.Registersvc(userRepo)
+	usersvc := service.NewUserService(userRepo)
 
 	return &UserHandler{
 		Usersvc: usersvc,
@@ -145,4 +146,61 @@ func (h *UserHandler) WhoAmI(c *gin.Context) {
 	}
 
 	c.JSON(status, gin.H{"user": user})
+}
+
+func (h *UserHandler) RefreshToken(c *gin.Context) {
+	email := c.GetString("user_email")
+
+	response, StatusCode, err := h.Usersvc.RefreshToken(email)
+
+	if err != nil {
+		slog.Info("failed to refresh token", "error", err.Error())
+
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message":    "Unauthorized",
+			"is_success": false,
+			"data":       nil,
+		})
+		return
+	}
+
+	c.JSON(StatusCode, gin.H{
+		"message":    "User refreshed successfully!",
+		"is_success": true,
+		"data":       response,
+	})
+}
+
+func (h *UserHandler) ForgotPassword(c *gin.Context) {
+	var body dtos.ForgotPasswordDTO
+
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	status, _ := h.Usersvc.ForgotPassword(&body)
+
+	c.JSON(status, gin.H{
+		"message": "If email exists, reset link sent",
+	})
+}
+
+func (h *UserHandler) ResetPassword(c *gin.Context) {
+	var body dtos.ResetPasswordDTO
+
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	status, err := h.Usersvc.ResetPasswords(&body)
+	if err != nil {
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(status, gin.H{
+		"message": "password reset successfully",
+	})
 }
