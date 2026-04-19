@@ -19,136 +19,151 @@ type UserService struct {
 	Repo *repository.UserRepo
 }
 
-//REGISTER FUNCTION SERVICE
-
-func Registersvc(Repo *repository.UserRepo) *UserService {
+func NewUserService(Repo *repository.UserRepo) *UserService {
 	return &UserService{
 		Repo: Repo,
 	}
 }
 
-//CREATE USER SERVICE
-
+// CREATE USER
 func (svc *UserService) CreateUser(data *dtos.CreateUserdto) (int, error) {
 	email := strings.ToLower(data.Email)
 	_, err := svc.Repo.GetUserByEmail(email)
 	if err == nil {
-		slog.Error("User with that email already exist")
-		return http.StatusConflict, errors.New("User with that email already exist")
+		slog.Error("User with that email already exists")
+		return http.StatusConflict, errors.New("user with that email already exists")
 	}
-	slog.Info("hashing password")
 
 	hashbyte, err := bcrypt.GenerateFromPassword([]byte(data.Password), bcrypt.DefaultCost)
 	if err != nil {
-		slog.Error("failed to hash password")
 		return http.StatusInternalServerError, errors.New(constants.DefaultErrorMsg)
 	}
-	data.Password = string(hashbyte)
-
-	slog.Info("created user")
 
 	err = svc.Repo.CreateUser(models.User{
 		Name:     data.Name,
-		Email:    data.Email,
-		Password: data.Password,
+		Email:    email,
+		Password: string(hashbyte),
 		Role:     data.Role,
 	})
 	if err != nil {
-		slog.Error("failed created User")
-		return http.StatusInternalServerError, errors.New("failed to create new User")
+		return http.StatusInternalServerError, errors.New("failed to create new user")
 	}
 	return http.StatusCreated, nil
 }
 
-// GET ALL USERS  API
+// GET ALL USERS
 func (svc *UserService) GetAllUsers() (int, []models.User, error) {
-
 	data, err := svc.Repo.GetAllusers()
-
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
-
 	return http.StatusOK, data, nil
 }
 
-// GET USER BY ID API
-
+// GET USER BY ID
 func (svc *UserService) GetUserById(id uint) (int, models.User, error) {
-
 	data, err := svc.Repo.GetUserbyId(id)
-
 	if err != nil {
-		return http.StatusInternalServerError, models.User{}, err
+		return http.StatusNotFound, models.User{}, errors.New("user not found")
 	}
-
 	return http.StatusOK, data, nil
 }
 
+// WHO AM I
 func (svc *UserService) WhoAmI(email string) (*models.User, int, error) {
-
-	slog.Info("Fetching user info from WhoAmI")
-
 	email = strings.ToLower(email)
-
 	user, err := svc.Repo.GetUserByEmail(email)
 	if err != nil {
-		slog.Error("User not found")
 		return nil, http.StatusNotFound, errors.New("user not found")
 	}
-
-	slog.Info("User fetched successfully")
-
 	return &user, http.StatusOK, nil
 }
 
-// LOGIN USER API
-
-func (svc *UserService) LoginUser(data *dtos.CreateLogindto) (response dtos.LoginUserResponse, statusCode int, err error) {
-	slog.Info("Login user")
-
+// LOGIN
+func (svc *UserService) LoginUser(data *dtos.CreateLogindto) (dtos.LoginUserResponse, int, error) {
 	email := strings.ToLower(data.Email)
-
-	// Find user
 	user, err := svc.Repo.GetUserByEmail(email)
 	if err != nil {
-		slog.Error("user not found")
-		statusCode = http.StatusUnauthorized
-		err = errors.New("invalid credentials")
-		return
+		return dtos.LoginUserResponse{}, http.StatusUnauthorized, errors.New("invalid credentials")
 	}
 
 	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(data.Password)); err != nil {
-		slog.Error("invalid password")
-		statusCode = http.StatusUnauthorized
-		err = errors.New("invalid credentials")
-		return
-	}
-	AccessToken, err := helpers.GenerateJwt(user.Role, user.Email, time.Now().Add(30*time.Minute).Unix(), false)
-
-	if err != nil {
-		slog.Error("Failed to Generate access token")
-		statusCode = http.StatusInternalServerError
-		err = errors.New(constants.DefaultErrorMsg)
-
-		return
-	}
-	RefreshToken, err := helpers.GenerateJwt(user.Role, user.Email, time.Now().Add(72*time.Hour).Unix(), true)
-
-	if err != nil {
-		slog.Error("Failed to Generate refresh token token")
-		statusCode = http.StatusInternalServerError
-		err = errors.New(constants.DefaultErrorMsg)
-
-		return
+		return dtos.LoginUserResponse{}, http.StatusUnauthorized, errors.New("invalid credentials")
 	}
 
-	response = dtos.LoginUserResponse{
-		AccessToken:  AccessToken,
-		RefreshToken: RefreshToken,
+	accessToken, err := helpers.GenerateJwt(user.Role, user.Email, time.Now().Add(30*time.Minute).Unix(), false)
+	refreshToken, err2 := helpers.GenerateJwt(user.Role, user.Email, time.Now().Add(72*time.Hour).Unix(), true)
+
+	if err != nil || err2 != nil {
+		return dtos.LoginUserResponse{}, http.StatusInternalServerError, errors.New(constants.DefaultErrorMsg)
+	}
+
+	return dtos.LoginUserResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
 		User:         user,
+	}, http.StatusOK, nil
+}
+
+// REFRESH TOKEN
+func (svc *UserService) RefreshToken(email string) (*dtos.LoginUserResponse, int, error) {
+	user, err := svc.Repo.GetUserByEmail(email)
+	if err != nil {
+		return nil, http.StatusUnauthorized, errors.New("unauthorized")
 	}
 
-	statusCode = http.StatusOK
-	return
+	accessToken, _ := helpers.GenerateJwt(user.Role, user.Email, time.Now().Add(15*time.Minute).Unix(), false)
+	refreshToken, _ := helpers.GenerateJwt(user.Role, user.Email, time.Now().Add(72*time.Hour).Unix(), true)
+
+	return &dtos.LoginUserResponse{
+		User:         user,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, http.StatusOK, nil
+}
+
+// FORGOT PASSWORD (Request Token)
+func (svc *UserService) ForgotPassword(data *dtos.ForgotPasswordDTO) (int, error) {
+	email := strings.ToLower(data.Email)
+	_, err := svc.Repo.GetUserByEmail(email)
+	if err != nil {
+		return http.StatusOK, nil // Silent return for security
+	}
+
+	token := helpers.GenerateSecureToken()
+	reset := models.PasswordResetToken{
+		Email:     email,
+		Token:     token,
+		ExpiresAt: time.Now().Add(15 * time.Minute),
+	}
+
+	if err := svc.Repo.SaveResetToken(reset); err != nil {
+		return http.StatusInternalServerError, err
+	}
+	return http.StatusOK, nil
+}
+
+// RESET PASSWORD (using Token)
+func (svc *UserService) ResetPasswords(data *dtos.ResetPasswordDTO) (int, error) {
+	record, err := svc.Repo.GetResetToken(data.Token)
+	if err != nil {
+		return http.StatusBadRequest, errors.New("invalid or expired token")
+	}
+
+	if time.Now().After(record.ExpiresAt) {
+		return http.StatusBadRequest, errors.New("token expired")
+	}
+
+	user, err := svc.Repo.GetUserByEmail(record.Email)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	hash, _ := bcrypt.GenerateFromPassword([]byte(data.NewPassword), bcrypt.DefaultCost)
+	if err := svc.Repo.UpdatePasswordById(user.ID, string(hash)); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	_ = svc.Repo.DeleteResetToken(data.Token)
+	return http.StatusOK, nil
 }

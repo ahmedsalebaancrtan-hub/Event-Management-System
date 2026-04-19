@@ -17,5 +17,8 @@ func RegisterRoute(r *gin.Engine) {
 		UserGroup.GET("/user/:userId", middleware.Authenticated(), middleware.RequiredRole("ORGANIZER"), UserHandler.GetUserById)
 		UserGroup.GET("/allusers", middleware.Authenticated(), middleware.RequiredRole("ADMIN", "STAFF", "ORGANIZER"), UserHandler.GetAllUsers)
 		UserGroup.GET("/whoami", middleware.Authenticated(), middleware.RequiredRole("ADMIN", "ORGANIZER", "STAFF"), UserHandler.WhoAmI)
+		UserGroup.POST("/Refresh_token", middleware.RefreshAuthenticated(), UserHandler.RefreshToken)
+		UserGroup.POST("/forgetpassword", UserHandler.ForgotPassword)
+		UserGroup.POST("reset", UserHandler.ResetPassword)
 	}
 }
