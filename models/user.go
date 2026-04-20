@@ -11,11 +11,13 @@ const (
 )
 
 type User struct {
-	ID        uint      `json:"id"`
-	Name      string    `json:"name"`
-	Email     string    `json:"email"`
-	Password  string    `json:"-"`
-	Role      Role      `json:"role"`
-	CreatedAt time.Time `json:"Createdat"`
-	UpdatedAt time.Time `json:"UpdatedAt"`
+	ID           uint      `json:"id"`
+	Name         string    `json:"name"`
+	Email        string    `json:"email"`
+	Password     string    `json:"-"`
+	Role         Role      `json:"role"`
+	Is2FAEnabled bool      `json:"Is2faenabled"`
+	TwoFASecret  string    `json:"Twosecret"`
+	CreatedAt    time.Time `json:"Createdat"`
+	UpdatedAt    time.Time `json:"UpdatedAt"`
 }

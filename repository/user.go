@@ -48,8 +48,19 @@ func (r *UserRepo) UpdatePasswordById(id uint, hashedpassword string) error {
 	return nil
 }
 
+// --- OTP / Reset Token Logic ---
+
 func (r *UserRepo) SaveResetToken(data models.PasswordResetToken) error {
+
+	r.DB.Where("email = ?", data.Email).Delete(&models.PasswordResetToken{})
 	return r.DB.Create(&data).Error
+}
+
+func (r *UserRepo) GetResetTokenByEmailAndOTP(email string, otp string) (models.PasswordResetToken, error) {
+	var record models.PasswordResetToken
+
+	err := r.DB.Where("email = ? AND token = ?", email, otp).First(&record).Error
+	return record, err
 }
 
 func (r *UserRepo) GetResetToken(token string) (models.PasswordResetToken, error) {

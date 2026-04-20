@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -19,188 +18,210 @@ type UserHandler struct {
 func RegisterUserHandler() *UserHandler {
 	userRepo := repository.RegisterRepo(infra.DB)
 	usersvc := service.NewUserService(userRepo)
-
-	return &UserHandler{
-		Usersvc: usersvc,
-	}
-
+	return &UserHandler{Usersvc: usersvc}
 }
 
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	var body dtos.CreateUserdto
-	err := c.ShouldBindBodyWithJSON(&body)
-
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"messege":    "failed to binding body",
-			"is_success": false,
-			"error":      err.Error(),
-		})
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid body", "error": err.Error()})
 		return
 	}
-	statuscode, err := h.Usersvc.CreateUser(&body)
+	status, err := h.Usersvc.CreateUser(&body)
 	if err != nil {
-		c.JSON(statuscode, gin.H{
-			"messege":   err.Error(),
-			"is_sucess": false,
-		})
+		c.JSON(status, gin.H{"message": err.Error(), "is_success": false})
 		return
 	}
-
-	c.JSON(statuscode, gin.H{
-		"is_success": true,
-		"messege":    "User Created sucessfully",
-	})
-
+	c.JSON(status, gin.H{"is_success": true, "message": "User Created successfully"})
 }
 
 func (h *UserHandler) LoginUser(c *gin.Context) {
 	var req dtos.CreateLogindto
-
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Invalid request body",
-			"error":   err.Error(),
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request body"})
 		return
 	}
-
 	response, statusCode, err := h.Usersvc.LoginUser(&req)
 	if err != nil {
-		c.JSON(statusCode, gin.H{
-			"message": err.Error(),
-		})
+		c.JSON(statusCode, gin.H{"message": err.Error(), "data": response})
+		return
+	}
+	c.JSON(statusCode, gin.H{"message": "Login successful", "data": response})
+}
+
+// FORGOT PASSWORD
+func (h *UserHandler) ForgotPassword(c *gin.Context) {
+	var body dtos.ForgotPasswordDTO
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	status, _ := h.Usersvc.ForgotPassword(&body)
+	c.JSON(status, gin.H{"message": "If email exists, an OTP has been sent."})
+}
+
+// RESET PASSWORD
+func (h *UserHandler) ResetPassword(c *gin.Context) {
+	var body dtos.ResetPasswordDTO
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Success response
-	c.JSON(statusCode, gin.H{
-		"message": "Login successful",
-		"data":    response,
-	})
+	// 🔥 IMPORTANT: Call the Email OTP version, not the 2FA version
+	status, err := h.Usersvc.ResetPassword(&body)
+	if err != nil {
+		c.JSON(status, gin.H{"message": err.Error()})
+		return
+	}
+
+	c.JSON(status, gin.H{"message": "Password updated successfully using Email OTP"})
 }
 
 func (h *UserHandler) GetAllUsers(c *gin.Context) {
 	status, data, err := h.Usersvc.GetAllUsers()
-
 	if err != nil {
-		c.JSON(status, gin.H{
-			"is_success": false,
-			"messege":    err.Error(),
-		})
+		c.JSON(status, gin.H{"is_success": false, "message": err.Error()})
 		return
 	}
-
-	c.JSON(status, gin.H{
-		"is_sucess": true,
-		"messege":   "Users fecthed sucessfully!",
-		"data":      data,
-	})
-
+	c.JSON(status, gin.H{"is_success": true, "data": data})
 }
 
 func (h *UserHandler) GetUserById(c *gin.Context) {
-	IdStr := c.Param("userId")
-
-	id, err := strconv.Atoi(IdStr)
-
+	id, err := strconv.Atoi(c.Param("userId"))
 	if err != nil {
-
-		c.JSON(http.StatusBadRequest, gin.H{
-			"messege":    "failed to get  user param",
-			"is_success": false,
-			"error":      err.Error(),
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "invalid id"})
 		return
 	}
-
 	status, user, err := h.Usersvc.GetUserById(uint(id))
-
 	if err != nil {
-		c.JSON(status, gin.H{
-			"is_success": false,
-			"messege":    err.Error(),
-		})
+		c.JSON(status, gin.H{"message": err.Error()})
 		return
 	}
-
-	c.JSON(status, gin.H{
-		"is_sucess": true,
-		"messege":   "users fecthed sucessfully!",
-		"data":      user,
-	})
-
+	c.JSON(status, gin.H{"data": user})
 }
 
 func (h *UserHandler) WhoAmI(c *gin.Context) {
-	email, exists := c.Get("email")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
-
-	user, status, err := h.Usersvc.WhoAmI(email.(string))
+	email := c.GetString("email")
+	user, status, err := h.Usersvc.WhoAmI(email)
 	if err != nil {
 		c.JSON(status, gin.H{"error": err.Error()})
 		return
 	}
-
 	c.JSON(status, gin.H{"user": user})
 }
 
-func (h *UserHandler) RefreshToken(c *gin.Context) {
-	email := c.GetString("user_email")
-
-	response, StatusCode, err := h.Usersvc.RefreshToken(email)
-
+func (h *UserHandler) ResetPasswordByAdmin(c *gin.Context) {
+	var body dtos.ResetPasswordDTO
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	adminEmail := c.GetString("email")
+	status, err := h.Usersvc.ResetPasswordByAdmin(adminEmail, &body)
 	if err != nil {
-		slog.Info("failed to refresh token", "error", err.Error())
+		c.JSON(status, gin.H{"message": err.Error()})
+		return
+	}
+	c.JSON(status, gin.H{"message": "password reset by admin successfully"})
+}
 
+// 2FA HANDLERS
+func (h *UserHandler) Generate2FA(c *gin.Context) {
+	email := c.GetString("email")
+	secret, url, err := h.Usersvc.Generate2FA(email)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	// Note: In a real app, store 'secret' in a short-lived cache/session
+	c.JSON(200, gin.H{"qr_url": url, "temp_secret": secret})
+}
+
+func (h *UserHandler) Enable2FA(c *gin.Context) {
+	email := c.GetString("email")
+	var body struct {
+		Code   string `json:"code"`
+		Secret string `json:"secret"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.Usersvc.Enable2FA(email, body.Code, body.Secret); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"message": "2FA enabled successfully"})
+}
+
+func (h *UserHandler) Verify2FA(c *gin.Context) {
+	email := c.GetString("email")
+	var body struct {
+		Code string `json:"code"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	resp, status, err := h.Usersvc.Verify2FA(email, body.Code)
+	if err != nil {
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(status, gin.H{"data": resp})
+}
+
+func (h *UserHandler) RefreshToken(c *gin.Context) {
+
+	email, exists := c.Get("email")
+	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"message":    "Unauthorized",
+			"message":    "Unauthorized: No email found in context",
 			"is_success": false,
-			"data":       nil,
 		})
 		return
 	}
 
-	c.JSON(StatusCode, gin.H{
-		"message":    "User refreshed successfully!",
+	// 2. Call the service
+	response, statusCode, err := h.Usersvc.RefreshToken(email.(string))
+	if err != nil {
+		c.JSON(statusCode, gin.H{
+			"message":    err.Error(),
+			"is_success": false,
+		})
+		return
+	}
+
+	c.JSON(statusCode, gin.H{
+		"message":    "Token refreshed successfully!",
 		"is_success": true,
 		"data":       response,
 	})
 }
 
-func (h *UserHandler) ForgotPassword(c *gin.Context) {
-	var body dtos.ForgotPasswordDTO
+// handlers/user_handler.go
+
+func (h *UserHandler) Verify2FALogin(c *gin.Context) {
+	var body struct {
+		Email string `json:"email"`
+		OTP   string `json:"otp"`
+	}
 
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Email and OTP are required"})
 		return
 	}
 
-	status, _ := h.Usersvc.ForgotPassword(&body)
-
-	c.JSON(status, gin.H{
-		"message": "If email exists, reset link sent",
-	})
-}
-
-func (h *UserHandler) ResetPassword(c *gin.Context) {
-	var body dtos.ResetPasswordDTO
-
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	status, err := h.Usersvc.ResetPasswords(&body)
+	// Make sure the service method name also matches: Verify2FALogin
+	response, statusCode, err := h.Usersvc.Verify2FALogin(body.Email, body.OTP)
 	if err != nil {
-		c.JSON(status, gin.H{"error": err.Error()})
+		c.JSON(statusCode, gin.H{"message": err.Error()})
 		return
 	}
 
-	c.JSON(status, gin.H{
-		"message": "password reset successfully",
+	c.JSON(statusCode, gin.H{
+		"message": "2FA Verification successful",
+		"data":    response,
 	})
 }
