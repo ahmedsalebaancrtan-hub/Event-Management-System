@@ -16,6 +16,8 @@ type AppCofig struct {
 	DbHost            string
 	Access_jwt_Token  string
 	Refresh_jwt_token string
+	EMAIL_USER        string
+	EMAIL_PASS        string
 }
 
 var Configuration AppCofig
@@ -35,4 +37,6 @@ func InitEnv() {
 	Configuration.DbHost = os.Getenv("DB_HOST")
 	Configuration.Access_jwt_Token = os.Getenv("Access_jwt_Token")
 	Configuration.Refresh_jwt_token = os.Getenv("Refresh_jwt_Token")
+	Configuration.EMAIL_USER = os.Getenv("EMAIL_USER")
+	Configuration.EMAIL_PASS = os.Getenv("EMAIL_PASS")
 }

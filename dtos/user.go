@@ -3,10 +3,11 @@ package dtos
 import "github.com/ahmedsaleban/eventManagementsystem/models"
 
 type CreateUserdto struct {
-	Name     string      `json:"name" binding:"required"`
-	Email    string      `json:"email" binding:"required,email"`
-	Password string      `json:"password" binding:"required,min=8,max=128"`
-	Role     models.Role `json:"role" binding:"required,oneof=ADMIN ORGANIZER STAFF"`
+	Name         string      `json:"name" binding:"required"`
+	Email        string      `json:"email" binding:"required,email"`
+	Password     string      `json:"password" binding:"required,min=8,max=128"`
+	Is2FAEnabled bool        `json:"Is2faenabled"`
+	Role         models.Role `json:"role" binding:"required,oneof=ADMIN ORGANIZER STAFF"`
 }
 
 type CreateLogindto struct {
@@ -25,12 +26,13 @@ type ResetPasswordByAdminDTO struct {
 	NewPassword string `json:"new_password" binding:"required,min=6"`
 }
 
-type ResetPasswordDTO struct {
-	UserID      uint   `json:"user_id" binding:"required"`
-	NewPassword string `json:"newpassword" binding:"required"`
-	Token       string `json:"token"`
-}
-
 type ForgotPasswordDTO struct {
 	Email string `json:"email" binding:"required,email"`
+}
+
+type ResetPasswordDTO struct {
+	UserID      uint   `json:"user_id"`
+	Email       string `json:"email" binding:"required,email"`
+	OTP         string `json:"otp" binding:"required,len=6"`
+	NewPassword string `json:"new_password" binding:"required,min=6"`
 }

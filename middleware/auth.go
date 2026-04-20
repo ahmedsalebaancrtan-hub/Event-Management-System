@@ -114,7 +114,6 @@ func RefreshAuthenticated() gin.HandlerFunc {
 		// 4. Parse token
 		token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
 
-			// Signing method check (GOOD 👍)
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrSignatureInvalid
 			}
