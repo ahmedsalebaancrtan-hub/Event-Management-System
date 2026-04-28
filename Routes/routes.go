@@ -10,7 +10,9 @@ func RegisterRoute(r *gin.Engine) {
 	ApiGroup := r.Group("/api")
 
 	UserHandler := handlers.RegisterUserHandler()
+	EventHandler := handlers.RegisterEventHandler()
 	UserGroup := ApiGroup.Group("/users")
+
 	{
 		UserGroup.POST("/create", UserHandler.CreateUser)
 		UserGroup.POST("/login", UserHandler.LoginUser)
@@ -23,4 +25,12 @@ func RegisterRoute(r *gin.Engine) {
 		UserGroup.POST("/reset-password", UserHandler.ResetPassword)
 		UserGroup.POST("/admin/reset-password", middleware.Authenticated(), middleware.RequiredRole("ADMIN"), UserHandler.ResetPasswordByAdmin)
 	}
+
+	EventGroup := ApiGroup.Group("/events")
+	{
+		EventGroup.POST("/create", middleware.Authenticated(), middleware.RequiredRole("ADMIN", "STAFF"), EventHandler.CreateEvent)
+		EventGroup.GET("/list", middleware.Authenticated(), middleware.RequiredRole("ADMIN", "STAFF", "ORGANIZER"), EventHandler.Getall)
+		EventGroup.GET("/details/:event_id", middleware.Authenticated(), middleware.RequiredRole("ADMIN", "STAFF", "ORGANIZER"), EventHandler.FindEventByid)
+	}
+
 }
