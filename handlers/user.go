@@ -43,7 +43,7 @@ func (h *UserHandler) LoginUser(c *gin.Context) {
 	}
 	response, statusCode, err := h.Usersvc.LoginUser(&req)
 	if err != nil {
-		c.JSON(statusCode, gin.H{"message": err.Error(), "data": response})
+		c.JSON(statusCode, gin.H{"is_success": false, "message": err.Error()})
 		return
 	}
 	c.JSON(statusCode, gin.H{"message": "Login successful", "data": response})

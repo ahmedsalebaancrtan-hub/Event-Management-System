@@ -77,7 +77,7 @@ func (h *EventHandler) FindEventByid(c *gin.Context) {
 	if err != nil {
 
 		c.JSON(http.StatusBadRequest, gin.H{
-			"messege":    "failed to get  Classid param",
+			"messege":    "failed to get  Event_id param",
 			"is_success": false,
 			"error":      err.Error(),
 		})
@@ -100,4 +100,30 @@ func (h *EventHandler) FindEventByid(c *gin.Context) {
 		"data":      event,
 	})
 
+}
+
+func (h *EventHandler) UpdateEvent(c *gin.Context) {
+
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	var body dtos.UpdateEventDTO
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	status, err := h.EventSvc.UpdateEvent(uint(id), &body)
+	if err != nil {
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(status, gin.H{
+		"message": "event updated successfully",
+	})
 }
