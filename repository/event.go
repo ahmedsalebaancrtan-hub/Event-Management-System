@@ -44,3 +44,7 @@ func (r *EventRepo) FindEventById(id uint) (models.Event, error) {
 
 	return event, nil
 }
+
+func (r *EventRepo) UpdateEvent(event models.Event) error {
+	return r.DB.Save(&event).Error
+}

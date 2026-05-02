@@ -11,6 +11,7 @@ type Event struct {
 	EndTime     time.Time `json:"EndTime"`
 	Capacity    int       `json:"capacity"`
 	Description string    `json:"Description"`
+	ImgUrl      string    `json:"img_url"`
 	CreatedAt   time.Time `json:"CreatedAt"`
 	UpdatedAt   time.Time `json:"UpdatedAt"`
 }

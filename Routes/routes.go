@@ -31,6 +31,8 @@ func RegisterRoute(r *gin.Engine) {
 		EventGroup.POST("/create", middleware.Authenticated(), middleware.RequiredRole("ADMIN", "STAFF"), EventHandler.CreateEvent)
 		EventGroup.GET("/list", middleware.Authenticated(), middleware.RequiredRole("ADMIN", "STAFF", "ORGANIZER"), EventHandler.Getall)
 		EventGroup.GET("/details/:event_id", middleware.Authenticated(), middleware.RequiredRole("ADMIN", "STAFF", "ORGANIZER"), EventHandler.FindEventByid)
+		EventGroup.PATCH("/Update/:id", middleware.Authenticated(), middleware.RequiredRole("ADMIN", "STAFF", "ORGANIZER"), EventHandler.UpdateEvent)
+
 	}
 
 }
