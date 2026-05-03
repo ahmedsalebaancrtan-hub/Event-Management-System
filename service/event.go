@@ -158,3 +158,28 @@ func (svc *EventSvc) UpdateEvent(id uint, data *dtos.UpdateEventDTO) (int, error
 
 	return http.StatusOK, nil
 }
+
+func (svc *EventSvc) FilterEvents(filter *dtos.EventFilterDTO) (int, []models.Event, error) {
+
+	// Optional: validate date format
+	layout := "2006-01-02"
+
+	if filter.StartDate != "" {
+		if _, err := time.Parse(layout, filter.StartDate); err != nil {
+			return http.StatusBadRequest, nil, errors.New("invalid start_date format (YYYY-MM-DD)")
+		}
+	}
+
+	if filter.EndDate != "" {
+		if _, err := time.Parse(layout, filter.EndDate); err != nil {
+			return http.StatusBadRequest, nil, errors.New("invalid end_date format (YYYY-MM-DD)")
+		}
+	}
+
+	data, err := svc.Repo.FilterEvents(*filter)
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	return http.StatusOK, data, nil
+}
