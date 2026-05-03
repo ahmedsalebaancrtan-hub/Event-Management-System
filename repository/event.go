@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"github.com/ahmedsaleban/eventManagementsystem/dtos"
 	"github.com/ahmedsaleban/eventManagementsystem/models"
 	"gorm.io/gorm"
 )
@@ -47,4 +48,33 @@ func (r *EventRepo) FindEventById(id uint) (models.Event, error) {
 
 func (r *EventRepo) UpdateEvent(event models.Event) error {
 	return r.DB.Save(&event).Error
+}
+
+func (r *EventRepo) FilterEvents(filter dtos.EventFilterDTO) ([]models.Event, error) {
+
+	var events []models.Event
+	query := r.DB.Model(&models.Event{})
+
+	if filter.Location != "" {
+		query = query.Where("LOWER(location) = LOWER(?)", filter.Location)
+	}
+
+	if filter.Type != "" {
+		query = query.Where("LOWER(type) = LOWER(?)", filter.Type)
+	}
+
+	if filter.Search != "" {
+		query = query.Where("LOWER(title) LIKE LOWER(?)", "%"+filter.Search+"%")
+	}
+
+	if filter.StartDate != "" {
+		query = query.Where("start_time >= ?", filter.StartDate)
+	}
+
+	if filter.EndDate != "" {
+		query = query.Where("start_time <= ?", filter.EndDate)
+	}
+
+	err := query.Find(&events).Error
+	return events, err
 }

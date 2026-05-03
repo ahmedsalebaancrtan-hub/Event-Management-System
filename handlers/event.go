@@ -127,3 +127,23 @@ func (h *EventHandler) UpdateEvent(c *gin.Context) {
 		"message": "event updated successfully",
 	})
 }
+
+func (h *EventHandler) FilterEvents(c *gin.Context) {
+
+	var filter dtos.EventFilterDTO
+
+	if err := c.ShouldBindQuery(&filter); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	status, data, err := h.EventSvc.FilterEvents(&filter)
+	if err != nil {
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(status, gin.H{
+		"data": data,
+	})
+}
