@@ -25,7 +25,7 @@ type UpdateEventDTO struct {
 type EventFilterDTO struct {
 	Type      string `form:"type"`
 	Location  string `form:"location"`
-	StartDate string `form:"start_date"`
+	StartDate string `form:"start_date"`  
 	EndDate   string `form:"end_date"`
 	Search    string `form:"search"` // for title search
 }

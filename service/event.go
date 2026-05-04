@@ -161,22 +161,39 @@ func (svc *EventSvc) UpdateEvent(id uint, data *dtos.UpdateEventDTO) (int, error
 
 func (svc *EventSvc) FilterEvents(filter *dtos.EventFilterDTO) (int, []models.Event, error) {
 
-	// Optional: validate date format
 	layout := "2006-01-02"
 
+	var startDate *time.Time
+	var endDate *time.Time
+
+	// Parse start_date
 	if filter.StartDate != "" {
-		if _, err := time.Parse(layout, filter.StartDate); err != nil {
+		parsedStart, err := time.Parse(layout, filter.StartDate)
+		if err != nil {
 			return http.StatusBadRequest, nil, errors.New("invalid start_date format (YYYY-MM-DD)")
 		}
+		startDate = &parsedStart
 	}
 
+	// Parse end_date
 	if filter.EndDate != "" {
-		if _, err := time.Parse(layout, filter.EndDate); err != nil {
+		parsedEnd, err := time.Parse(layout, filter.EndDate)
+		if err != nil {
 			return http.StatusBadRequest, nil, errors.New("invalid end_date format (YYYY-MM-DD)")
 		}
+
+		// extend to end of day
+		endOfDay := parsedEnd.Add(24*time.Hour - time.Nanosecond)
+		endDate = &endOfDay
 	}
 
-	data, err := svc.Repo.FilterEvents(*filter)
+	// 🔴 important validation
+	if startDate != nil && endDate != nil && endDate.Before(*startDate) {
+		return http.StatusBadRequest, nil, errors.New("end_date cannot be before start_date")
+	}
+
+	// call repo with parsed values
+	data, err := svc.Repo.FilterEvents(*filter, startDate, endDate)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}

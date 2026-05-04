@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"github.com/ahmedsaleban/eventManagementsystem/dtos"
 	"github.com/ahmedsaleban/eventManagementsystem/models"
 	"gorm.io/gorm"
@@ -50,7 +52,11 @@ func (r *EventRepo) UpdateEvent(event models.Event) error {
 	return r.DB.Save(&event).Error
 }
 
-func (r *EventRepo) FilterEvents(filter dtos.EventFilterDTO) ([]models.Event, error) {
+func (r *EventRepo) FilterEvents(
+	filter dtos.EventFilterDTO,
+	startDate *time.Time,
+	endDate *time.Time,
+) ([]models.Event, error) {
 
 	var events []models.Event
 	query := r.DB.Model(&models.Event{})
@@ -67,12 +73,13 @@ func (r *EventRepo) FilterEvents(filter dtos.EventFilterDTO) ([]models.Event, er
 		query = query.Where("LOWER(title) LIKE LOWER(?)", "%"+filter.Search+"%")
 	}
 
-	if filter.StartDate != "" {
-		query = query.Where("start_time >= ?", filter.StartDate)
-	}
-
-	if filter.EndDate != "" {
-		query = query.Where("start_time <= ?", filter.EndDate)
+	// 🔥 Correct overlap logic
+	if startDate != nil && endDate != nil {
+		query = query.Where("start_time <= ? AND end_time >= ?", *endDate, *startDate)
+	} else if startDate != nil {
+		query = query.Where("end_time >= ?", *startDate)
+	} else if endDate != nil {
+		query = query.Where("start_time <= ?", *endDate)
 	}
 
 	err := query.Find(&events).Error
