@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"github.com/ahmedsaleban/eventManagementsystem/dtos"
 	"github.com/ahmedsaleban/eventManagementsystem/models"
 	"gorm.io/gorm"
@@ -19,7 +21,6 @@ func RegisterEventRepo(db *gorm.DB) *EventRepo {
 
 func (r *EventRepo) CreateEvent(event models.Event) error {
 	return r.DB.Create(&event).Error
-
 }
 
 func (r *EventRepo) GetallEvents() ([]models.Event, error) {
@@ -34,23 +35,39 @@ func (r *EventRepo) GetallEvents() ([]models.Event, error) {
 
 }
 
-func (r *EventRepo) FindEventById(id uint) (models.Event, error) {
+func (r *EventRepo) GetEventByID(id uint) (models.Event, error) {
 	var event models.Event
+	err := r.DB.First(&event, id).Error
+	return event, err
+}
 
-	err := r.DB.Where("id = ?", id).First(&event).Error
+// update event status (approve/reject)
+func (r *EventRepo) UpdateEventStatus(id uint, status string, adminID uint) error {
+	return r.DB.Model(&models.Event{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"status":      status,
+			"reviewed_by": adminID,
+			"reviewed_at": gorm.Expr("NOW()"),
+		}).Error
+}
 
-	if err != nil {
-		return models.Event{}, err
-	}
-
-	return event, nil
+// get only approved events
+func (r *EventRepo) GetApprovedEvents() ([]models.Event, error) {
+	var events []models.Event
+	err := r.DB.Where("status = ?", "approved").Find(&events).Error
+	return events, err
 }
 
 func (r *EventRepo) UpdateEvent(event models.Event) error {
 	return r.DB.Save(&event).Error
 }
 
-func (r *EventRepo) FilterEvents(filter dtos.EventFilterDTO) ([]models.Event, error) {
+func (r *EventRepo) FilterEvents(
+	filter dtos.EventFilterDTO,
+	startDate *time.Time,
+	endDate *time.Time,
+) ([]models.Event, error) {
 
 	var events []models.Event
 	query := r.DB.Model(&models.Event{})
@@ -67,12 +84,13 @@ func (r *EventRepo) FilterEvents(filter dtos.EventFilterDTO) ([]models.Event, er
 		query = query.Where("LOWER(title) LIKE LOWER(?)", "%"+filter.Search+"%")
 	}
 
-	if filter.StartDate != "" {
-		query = query.Where("start_time >= ?", filter.StartDate)
-	}
-
-	if filter.EndDate != "" {
-		query = query.Where("start_time <= ?", filter.EndDate)
+	// 🔥 Correct overlap logic
+	if startDate != nil && endDate != nil {
+		query = query.Where("start_time <= ? AND end_time >= ?", *endDate, *startDate)
+	} else if startDate != nil {
+		query = query.Where("end_time >= ?", *startDate)
+	} else if endDate != nil {
+		query = query.Where("start_time <= ?", *endDate)
 	}
 
 	err := query.Find(&events).Error
