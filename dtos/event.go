@@ -1,12 +1,13 @@
 package dtos
 
 type CreateEventDTO struct {
-	Title       string `json:"title" binding:"required"`
-	Type        string `json:"type" binding:"required"`
-	Location    string `json:"location" binding:"required"`
-	StartTime   string `json:"start_time" binding:"required"`
-	EndTime     string `json:"end_time" binding:"required"`
-	Capacity    int    `json:"capacity" binding:"required"`
+	Title     string `json:"title" binding:"required"`
+	Type      string `json:"type" binding:"required,oneof=SEMINAR WORKSHOP CONFERENCE"`
+	Location  string `json:"location" binding:"required"`
+	StartTime string `json:"start_time" binding:"required"`
+	EndTime   string `json:"end_time" binding:"required"`
+	Capacity  int    `json:"capacity" binding:"required"`
+
 	ImgUrl      string `json:"img_url"`
 	Description string `json:"description"`
 }
@@ -25,7 +26,11 @@ type UpdateEventDTO struct {
 type EventFilterDTO struct {
 	Type      string `form:"type"`
 	Location  string `form:"location"`
-	StartDate string `form:"start_date"`  
+	StartDate string `form:"start_date"`
 	EndDate   string `form:"end_date"`
 	Search    string `form:"search"` // for title search
+}
+
+type ApproveEventDTO struct {
+	Status string `json:"status" binding:"required"` // approved or rejected
 }
