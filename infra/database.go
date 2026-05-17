@@ -22,6 +22,7 @@ func DbConnect() {
 	db.AutoMigrate(models.User{},
 		models.PasswordResetToken{},
 		models.Event{},
+		models.EventRegistration{},
 		// models.Attendence{},
 	)
 

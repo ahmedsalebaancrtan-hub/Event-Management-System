@@ -8,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-func GenerateJwt(role models.Role, sub string, ExpireIn int64, isrefreshToken bool) (string, error) {
+func GenerateJwt(role models.Role, userID uint, sub string, ExpireIn int64, isrefreshToken bool) (string, error) {
 	config := infra.Configuration
 
 	var jwtsecret []byte
@@ -19,6 +19,7 @@ func GenerateJwt(role models.Role, sub string, ExpireIn int64, isrefreshToken bo
 		jwtsecret = []byte(config.Access_jwt_Token)
 	}
 	claims := jwt.MapClaims{
+		"userID":         userID,
 		"sub":            sub,
 		"npf":            time.Now(),
 		"exp":            ExpireIn,
