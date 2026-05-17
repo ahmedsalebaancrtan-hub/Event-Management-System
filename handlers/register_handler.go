@@ -1,6 +1,3 @@
-// =======================
-// handlers/register_handler.go
-// =======================
 package handlers
 
 import (
@@ -105,5 +102,37 @@ func (h *RegisterHandler) GetUserEvents(c *gin.Context) {
 
 	c.JSON(status, gin.H{
 		"data": data,
+	})
+}
+
+func (h *RegisterHandler) CancelRegistration(c *gin.Context) {
+
+	eventIdStr := c.Param("eventId")
+
+	eventID, err := strconv.Atoi(eventIdStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid event id",
+		})
+		return
+	}
+
+	// logged-in user
+	userID := c.GetUint("user_id")
+
+	status, err := h.Service.CancelRegistration(
+		uint(eventID),
+		userID,
+	)
+
+	if err != nil {
+		c.JSON(status, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(status, gin.H{
+		"message": "registration cancelled successfully",
 	})
 }

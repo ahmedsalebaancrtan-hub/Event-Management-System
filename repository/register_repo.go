@@ -95,3 +95,23 @@ func (r *RegistersRepo) GetUserEvents(userID uint) ([]models.Event, error) {
 
 	return events, err
 }
+
+func (r *RegistersRepo) GetRegistration(
+	eventID uint,
+	userID uint,
+) (models.EventRegistration, error) {
+
+	var register models.EventRegistration
+
+	err := r.DB.
+		Where("event_id = ? AND user_id = ?", eventID, userID).
+		First(&register).Error
+
+	return register, err
+}
+
+// delete registration
+func (r *RegistersRepo) DeleteRegistration(id uint) error {
+
+	return r.DB.Delete(&models.EventRegistration{}, id).Error
+}

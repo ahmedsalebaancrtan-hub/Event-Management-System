@@ -44,6 +44,7 @@ func RegisterRoute(r *gin.Engine) {
 		RegisterGroup.POST("/registers", middleware.Authenticated(), RegisterHandler.RegisterToEvent)
 		RegisterGroup.GET("/events/:id/users", middleware.Authenticated(), RegisterHandler.GetEventUsers)
 		RegisterGroup.GET("/users/:id/events", middleware.Authenticated(), RegisterHandler.GetUserEvents)
+		RegisterGroup.DELETE("/:eventId", middleware.Authenticated(), RegisterHandler.CancelRegistration)
 	}
 
 }

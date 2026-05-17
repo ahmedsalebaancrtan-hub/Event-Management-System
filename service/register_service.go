@@ -97,3 +97,23 @@ func (svc *RegisterService) GetUserEvents(userID uint) (int, []models.Event, err
 
 	return http.StatusOK, data, nil
 }
+
+func (svc *RegisterService) CancelRegistration(
+	eventID uint,
+	userID uint,
+) (int, error) {
+
+	// check registration exists
+	register, err := svc.Repo.GetRegistration(eventID, userID)
+	if err != nil {
+		return http.StatusNotFound, errors.New("registration not found")
+	}
+
+	// delete registration
+	err = svc.Repo.DeleteRegistration(register.ID)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
+}
