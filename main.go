@@ -6,6 +6,7 @@ import (
 
 	"github.com/ahmedsaleban/eventManagementsystem/Routes"
 	"github.com/ahmedsaleban/eventManagementsystem/infra"
+	"github.com/ahmedsaleban/eventManagementsystem/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,6 +19,7 @@ func main() {
 	slog.Info("Connect database succesfully")
 
 	r := gin.Default()
+	r.Use(middleware.CORSMiddleware())
 	Routes.RegisterRoute(r)
 
 	slog.Info("application is running successfully on port 5000")

@@ -12,8 +12,9 @@ import (
 )
 
 type Claims struct {
-	Sub  string `json:"sub"`
-	Role string `json:"role"`
+	Sub    string `json:"sub"`
+	Role   string `json:"role"`
+	UserID uint
 	jwt.StandardClaims
 }
 
@@ -73,7 +74,18 @@ func Authenticated() gin.HandlerFunc {
 		email := claims["sub"]
 		role := claims["role"]
 
-		// 7. Set context
+		userIDFloat, ok := claims["userID"].(float64)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"message":    "invalid user id",
+				"is_success": false,
+			})
+			return
+		}
+
+		userID := uint(userIDFloat)
+
+		c.Set("user_id", userID)
 		c.Set("email", email)
 		c.Set("role", role)
 
